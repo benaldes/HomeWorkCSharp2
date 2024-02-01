@@ -68,11 +68,6 @@ namespace ConsoleApp1
 
             }
 
-
-
-            
-            
-            
             StartGame();
 
         }
