@@ -1,16 +1,11 @@
 ﻿// ---- C# II (Dor Ben Dor) ----
 // ben aldes
 // -----------------------------
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConsoleApp1
 {
-    public struct Dice
+    public struct Dice : IRandomProvider
     {
         private int scalar, modifier, basedie;
 
@@ -20,7 +15,7 @@ namespace ConsoleApp1
             this.basedie = basedie;
             this.modifier = modifier;
         }
-        public int roll()
+        public int Roll()
         {
             int value = 0;
             for (int i = 0; i < scalar; i++)
@@ -49,3 +44,4 @@ namespace ConsoleApp1
         }
     }
 }
+

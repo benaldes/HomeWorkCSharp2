@@ -1,241 +1,227 @@
 ﻿// ---- C# II (Dor Ben Dor) ----
 // ben aldes
 // -----------------------------
-using ConsoleApp1;
-using static System.Net.Mime.MediaTypeNames;
 
-public abstract class Unit
+namespace ConsoleApp1
 {
-    private Dice damage;
-    public bool IsDead = false;
-    public virtual int HP { get; set; }
-    public virtual Race UnitRace { get; set; }
-    public int carryingCapacity { get; set; }
-    public  Dice hitChance { get; set; }
-    public  Dice defenseRating { get; set; }
-    public  WeatherEffect weatherEffect { get; set; }
-    public virtual int Damage { get { return damage.roll(); } }
-    public virtual void SetDamageDice(int scalar, int basedie, int modifier)
+    public abstract class Unit
     {
-        damage = new Dice(scalar,basedie,modifier);
-    }
-    public virtual void SetHitChance(int scalar, int basedie, int modifier)
-    {
-        hitChance = new Dice(scalar, basedie, modifier);
-    }
-    public virtual void SetDefenseChance(int scalar, int basedie, int modifier)
-    {
-        defenseRating = new Dice(scalar, basedie, modifier);
-    }
+        private IRandomProvider damage { get; set; }
+        public bool IsDead = false;
+        public virtual int HP { get; set; }
+        public virtual Race UnitRace { get; set; }
+        public int carryingCapacity { get; set; }
+        private IRandomProvider hitChance { get; set; }
+        private IRandomProvider defenseRating { get; set; }
+        public WeatherEffect weatherEffect { get; set; }
+        public virtual int Damage { get { return damage.Roll(); } }
+        public virtual int HitChance { get { return hitChance.Roll(); } }
+        public virtual int DefenseRating { get { return defenseRating.Roll(); } }
 
-    public virtual void Attack(Unit defender)
-    {
-        defender.Defense(this);
-    }
-    public virtual void ApplyWeatherEffects(WeatherEffect weather)
-    {
-        weatherEffect = weather;
-    }
-    public abstract void Defense(Unit attacker);
-    protected void ApplyDamage(int damage)
-    {
-        HP -= damage;
-        if(HP <= 0)
+        public Unit(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
         {
-            IsDead = true;
-            Console.WriteLine(this.ToString() + " Is Dead");
+            this.damage = damage;
+            this.hitChance = hitChance;
+            this.defenseRating = defenseRating;  
+        }
+        public virtual void Attack(Unit defender)
+        {
+            defender.Defense(this);
+        }
+        public virtual void ApplyWeatherEffects(WeatherEffect weather)
+        {
+            weatherEffect = weather;
+        }
+        public abstract void Defense(Unit attacker);
+        protected void ApplyDamage(int damage)
+        {
+            HP -= damage;
+            if (HP <= 0)
+            {
+                IsDead = true;
+                Console.WriteLine(this.ToString() + " Is Dead");
+            }
         }
     }
-}
-public abstract class NormalUnit : Unit
-{
-
-    public override void Defense(Unit attacker)
+    public abstract class NormalUnit : Unit
     {
-        if(attacker.hitChance.roll() > this.defenseRating.roll())
+        protected NormalUnit(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+                            : base(damage, hitChance, defenseRating) { }
+
+        public override void Defense(Unit attacker)
         {
-            int damage = attacker.Damage;
-            Console.WriteLine($"{attacker.ToString()} attacked {this.ToString()} for {damage}");
-            ApplyDamage(damage);
+            if (attacker.HitChance > this.DefenseRating)
+            {
+                int damage = attacker.Damage;
+                Console.WriteLine($"{attacker.ToString()} attacked {this.ToString()} for {damage}");
+                ApplyDamage(damage);
+            }
+            else
+            {
+                Console.WriteLine($"{attacker.ToString()} missed {this.ToString()} ");
+            }
+
         }
-        else
+    }
+    public abstract class GamblerUnit : Unit
+    {
+        Random random = new Random();
+        protected GamblerUnit(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+                            : base(damage, hitChance, defenseRating) { }
+        public override void Defense(Unit attacker)
         {
-            Console.WriteLine($"{attacker.ToString()} missed {this.ToString()} ");
+            if (attacker.HitChance > this.DefenseRating)
+            {
+                int damage = attacker.Damage;
+                Console.WriteLine($"{attacker.ToString()} attacked {this.ToString()} for {damage}");
+                ApplyDamage(damage);
+            }
+            else
+            {
+                Console.WriteLine($"{attacker.ToString()} missed {this.ToString()} ");
+            }
+        }
+
+    }
+
+    public enum Race
+    {
+        Humen,
+        Fishmen,
+        Giants
+    }
+    public enum WeatherEffect
+    {
+        Rain,
+        Snow,
+        Thunderstorm,
+        Heatwave
+
+    }
+
+    public class HumenWarrior : NormalUnit
+    {
+        Dice dice = new Dice(2, 8, 4);
+        public HumenWarrior(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating) 
+            : base(damage, hitChance, defenseRating)
+        {
+            UnitRace = Race.Humen;
+            HP = 10;
+            carryingCapacity = 5;
         }
         
     }
-}
-public abstract class GamblerUnit : Unit
-{
-    Random random = new Random();
-
-    public override void Defense(Unit attacker)
+    public class HumenGambler : GamblerUnit
     {
-        if (attacker.hitChance.roll() > this.defenseRating.roll())
+        public HumenGambler(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+            : base(damage, hitChance, defenseRating)
         {
-            int damage = attacker.Damage;
-            Console.WriteLine($"{attacker.ToString()} attacked {this.ToString()} for {damage}");
-            ApplyDamage(damage);
-        }
-        else
-        {
-            Console.WriteLine($"{attacker.ToString()} missed {this.ToString()} ");
+            UnitRace = Race.Humen;
+            HP = 8;
+            carryingCapacity = 6;
         }
     }
-  
-}
-
-public enum Race
-{
-    Humen,
-    Fishmen,
-    Giants
-}
-public enum WeatherEffect
-{
-    Rain,
-    Snow,
-    Thunderstorm,
-    Heatwave
-
-}
-
-public class HumenWarrior : NormalUnit
-{
-    public HumenWarrior() 
+    public class HumenSniper : NormalUnit
     {
-        UnitRace = Race.Humen;
-        HP = 10;
-        carryingCapacity = 5;
-        SetDamageDice(2, 8, 4);
-        SetHitChance(2, 8, 4);
-        SetDefenseChance(2, 8, 4);
-        
-    }
-}
-public class HumenGambler : GamblerUnit
-{
-    public HumenGambler()
-    {
-        UnitRace = Race.Humen;
-        HP = 8;
-        carryingCapacity = 6;
-        SetDamageDice(2, 8, 4);
-    }
-}
-public class HumenSniper : NormalUnit
-{
-    Random random = new Random();
-    public HumenSniper()
-    {
-        UnitRace = Race.Humen;
-        HP = 6;
-        carryingCapacity = 2;
-        SetDamageDice(2, 8, 4);
-        SetHitChance(2, 8, 4);
-        SetDefenseChance(2, 8, 4);
-    }
-    public override void Attack(Unit defender)
-    {
-        int chance = random.Next(0, 3);
-        if (chance == 0) return;
-        base.Attack(defender);
-    }
-}
-
-public class FishmanShark : NormalUnit
-{
-    public FishmanShark()
-    {
-        UnitRace = Race.Fishmen;
-        HP = 15;
-        carryingCapacity = 9;
-        SetDamageDice(2, 8, 4);
-        SetHitChance(2, 8, 4);
-        SetDefenseChance(2, 8, 4);
-    }
-  
-}
-public class FishmanSquid : GamblerUnit
-{
-    public FishmanSquid()
-    {
-        UnitRace = Race.Fishmen;
-        HP = 5;
-        carryingCapacity = 10;
-        SetDamageDice(2, 8, 4);
-        SetHitChance(2, 8, 4);
-        SetDefenseChance(2, 8, 4);
-    }
-    public override void Attack(Unit defender)
-    {
-        base.Attack(defender);
-        base.Attack(defender);
+        Random random = new Random();
+        public HumenSniper(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+            : base(damage, hitChance, defenseRating)
+        {
+            UnitRace = Race.Humen;
+            HP = 6;
+        }
+        public override void Attack(Unit defender)
+        {
+            int chance = random.Next(0, 3);
+            if (chance == 0) return;
+            base.Attack(defender);
+        }
     }
 
-}
-
-public class FishmanFish : NormalUnit
-{
-    public FishmanFish()
+    public class FishmanShark : NormalUnit
     {
-        UnitRace = Race.Fishmen;
-        HP = 1;
-        carryingCapacity = 0;
-        SetDamageDice(0, 0, 0);
-        SetHitChance(0,0,0);
-        SetDefenseChance(0,0,0);
+        public FishmanShark(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+            : base(damage, hitChance, defenseRating)
+        {
+            UnitRace = Race.Fishmen;
+            HP = 15;
+            carryingCapacity = 9;
+
+        }
+
     }
-    public override void Attack(Unit defender) 
+    public class FishmanSquid : GamblerUnit
     {
-        Console.WriteLine("FishmanFish is happy to be here");
-    }
+        public FishmanSquid(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+            : base(damage, hitChance, defenseRating)
+        {
+            UnitRace = Race.Fishmen;
+            HP = 5;
+            carryingCapacity = 10;
 
-}
+        }
+        public override void Attack(Unit defender)
+        {
+            base.Attack(defender);
+            base.Attack(defender);
+        }
 
-public class GiantFighter : GamblerUnit
-{
-    Random random = new Random();
-
-    public GiantFighter()
-    {
-        UnitRace = Race.Giants;
-        HP = 30;
-        carryingCapacity = 40;
-        SetDamageDice(2, 8, 4);
-        SetHitChance(2, 8, 4);
-        SetDefenseChance(2, 8, 4);
     }
 
-}
-
-public class GiantOre : GamblerUnit
-{
-    Random random = new Random();
-
-    public GiantOre()
+    public class FishmanFish : NormalUnit
     {
-        UnitRace = Race.Giants;
-        HP = 100;
-        carryingCapacity = 50;
-        SetDamageDice(2, 8, 4);
-        SetHitChance(2, 8, 4);
-        SetDefenseChance(2, 8, 4);
-    }
-  
-}
-public class GiantKid : GamblerUnit
-{
-    Random random = new Random();
+        public FishmanFish(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+            : base(damage, hitChance, defenseRating)
+        {
+            UnitRace = Race.Fishmen;
+            HP = 1;
+            carryingCapacity = 0;
+        }
+        public override void Attack(Unit defender)
+        {
+            Console.WriteLine("FishmanFish is happy to be here");
+        }
 
-    public GiantKid()
-    {
-        UnitRace = Race.Giants;
-        HP = 20;
-        carryingCapacity = 20;
-        SetDamageDice(2, 8, 4);
-        SetHitChance(2, 8, 4);
-        SetDefenseChance(2, 8, 4);
     }
 
+    public class GiantFighter : GamblerUnit
+    {
+        Random random = new Random();
+
+        public GiantFighter(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+            : base(damage, hitChance, defenseRating)
+        {
+            UnitRace = Race.Giants;
+            HP = 30;
+            carryingCapacity = 40;
+
+        }
+
+    }
+
+    public class GiantOre : GamblerUnit
+    {
+        Random random = new Random();
+
+        public GiantOre(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+            : base(damage, hitChance, defenseRating)
+        {
+            UnitRace = Race.Giants;
+            HP = 100;
+        }
+
+    }
+    public class GiantKid : GamblerUnit
+    {
+        Random random = new Random();
+
+        public GiantKid(IRandomProvider damage, IRandomProvider hitChance, IRandomProvider defenseRating)
+            : base(damage, hitChance, defenseRating)
+        {
+            UnitRace = Race.Giants;
+            HP = 20;
+            carryingCapacity = 20;
+        }
+
+    }
 }
