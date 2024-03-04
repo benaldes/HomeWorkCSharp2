@@ -5,6 +5,25 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ConsoleApp1
 {
+    public class Dice<T> : IComparable<T> 
+    {
+        public int CompareTo(T? other)
+        {
+            if (other == null) return 1;
+
+            if(other.GetType() == typeof(T)) return 0;
+
+            return -1;
+
+        }
+    }
+
+
+
+
+
+
+
     public struct Dice : IRandomProvider
     {
         private int scalar, modifier, basedie;
