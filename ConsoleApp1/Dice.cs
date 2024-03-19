@@ -5,36 +5,39 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace ConsoleApp1
 {
-    public class Dice<T> : IComparable<T> 
+    public class Dice<T>  where T : IComparable<T>
     {
-        public int CompareTo(T? other)
-        {
-            if (other == null) return 1;
+        protected T scalar, modifier, basedie;
 
-            if(other.GetType() == typeof(T)) return 0;
-
-            return -1;
-
-        }
-    }
-
-
-
-
-
-
-
-    public struct Dice : IRandomProvider
-    {
-        private int scalar, modifier, basedie;
-
-        public Dice(int scalar, int basedie, int modifier)
+        public Dice() { }
+        public Dice(T scalar, T basedie, T modifier)
         {
             this.scalar = scalar;
             this.basedie = basedie;
             this.modifier = modifier;
         }
-        public int Roll()
+        public virtual T Roll()
+        {
+            throw new NotImplementedException("Roll method not implemented for generic type T.");
+        }
+        public override string ToString()
+        {
+            return scalar.ToString() + "d" + basedie.ToString() + " +" + modifier;
+        }
+    }
+
+    public class Dice : Dice<int> ,IRandomProvider
+    {
+
+
+        public Dice(int scalar, int basedie, int modifier) : base(scalar, basedie, modifier)
+        {
+            this.scalar = scalar;
+            this.basedie = basedie;
+            this.modifier = modifier;
+        }
+
+        public override int Roll()
         {
             int value = 0;
             for (int i = 0; i < scalar; i++)
@@ -45,22 +48,8 @@ namespace ConsoleApp1
             value += modifier;
             return value;
         }
-        public override string ToString()
-        {
-            return scalar.ToString() + "d" + basedie.ToString() + " +" + modifier;
-        }
-        public override bool Equals([NotNullWhen(true)] object? obj)
-        {
-            if (this.ToString() == obj.ToString()) return true;
-
-            return false;
-        }
-        public override int GetHashCode()
-        {
-            int haseCode = scalar ^ basedie * modifier;
-            return haseCode;
-
-        }
+       
+        
     }
 }
 
